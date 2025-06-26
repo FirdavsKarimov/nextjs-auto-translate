@@ -5,4 +5,3 @@ export interface PluginOptions {
     outputDir?: string;
 }
 export default function myPlugin(options?: PluginOptions): (nextConfig: NextConfig) => NextConfig;
-export * from "./runtime/index.js";

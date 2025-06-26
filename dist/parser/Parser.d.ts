@@ -1,4 +1,4 @@
-import { ScopeMap, ParserOptions } from "../types";
+import { ParserOptions, ScopeMap } from "../types";
 export declare class Parser {
     private options;
     private lockPath;
@@ -6,6 +6,7 @@ export declare class Parser {
     constructor(options?: ParserOptions & {
         outputDir?: string;
     });
-    parseProject(): Promise<ScopeMap>;
+    private findFilesSync;
+    parseProject(): ScopeMap;
     private hasChanges;
 }

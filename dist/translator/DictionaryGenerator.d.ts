@@ -18,7 +18,7 @@ export declare class DictionaryGenerator {
     private options;
     private translationService;
     constructor(options: DictionaryGeneratorOptions);
-    generateDictionary(sourceMap: ScopeMap): Promise<void>;
+    generateDictionary(sourceMap: ScopeMap): string;
     private writeDictionaryFiles;
     private generateDictionaryJsContent;
 }

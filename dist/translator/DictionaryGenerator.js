@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 // Fake translation service - returns original text as placeholder
 class MockTranslationService {
-    async translate(text, targetLocale) {
+    translate(text, targetLocale) {
         // For now, just return the original text with a locale prefix
         // In a real implementation, this would call an actual translation API
         if (targetLocale === "en") {
@@ -16,7 +16,7 @@ export class DictionaryGenerator {
         this.options = options;
         this.translationService = new MockTranslationService();
     }
-    async generateDictionary(sourceMap) {
+    generateDictionary(sourceMap) {
         console.log(`[DictionaryGenerator] Generating dictionary for locales: ${this.options.targetLocales.join(", ")}`);
         const dictionary = {
             version: 0.1,
@@ -33,7 +33,7 @@ export class DictionaryGenerator {
                 // Generate translations for each target locale
                 for (const locale of this.options.targetLocales) {
                     try {
-                        translations[locale] = await this.translationService.translate(scopeData.content, locale);
+                        translations[locale] = this.translationService.translate(scopeData.content, locale);
                     }
                     catch (error) {
                         console.warn(`[DictionaryGenerator] Failed to translate "${scopeData.content}" to ${locale}:`, error);
@@ -48,9 +48,11 @@ export class DictionaryGenerator {
             }
         }
         // Write dictionary files
-        await this.writeDictionaryFiles(dictionary);
+        const outputPath = this.writeDictionaryFiles(dictionary);
+        const dictionaryJsonPath = path.join(outputPath, "dictionary.json");
+        return dictionaryJsonPath;
     }
-    async writeDictionaryFiles(dictionary) {
+    writeDictionaryFiles(dictionary) {
         const outputPath = path.resolve(process.cwd(), this.options.outputDir);
         // Ensure output directory exists
         fs.mkdirSync(outputPath, { recursive: true });
@@ -64,6 +66,7 @@ export class DictionaryGenerator {
         const totalEntries = Object.values(dictionary.files).reduce((count, file) => count + Object.keys(file.entries).length, 0);
         console.log(`[DictionaryGenerator] Generated dictionary with ${totalEntries} entries across ${Object.keys(dictionary.files).length} files`);
         console.log(`[DictionaryGenerator] Dictionary files written to: ${outputPath}`);
+        return outputPath;
     }
     generateDictionaryJsContent(dictionary) {
         return `const dictionary = ${JSON.stringify(dictionary, null, 2)};

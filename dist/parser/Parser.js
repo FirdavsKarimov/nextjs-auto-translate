@@ -1,54 +1,12 @@
-import fg from "fast-glob";
-import fs from "fs";
-import path from "path";
+// src/parser/Parser.ts
 import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
-import crypto from "crypto";
-import { SourceStore } from "../storage/SourceStore";
 import * as t from "@babel/types";
-/**
- * Builds a readable content string from a JSXElement node,
- * using pseudo-tags for JSXElements and trimmed text for JSXText.
- */
-function buildContent(node) {
-    let out = "";
-    for (const child of node.children) {
-        if (t.isJSXText(child)) {
-            const text = child.value.trim();
-            if (text)
-                out += text;
-        }
-        else if (t.isJSXElement(child)) {
-            const nameNode = child.openingElement.name;
-            let name = "Unknown";
-            if (t.isJSXIdentifier(nameNode)) {
-                name = nameNode.name;
-            }
-            else if (t.isJSXMemberExpression(nameNode)) {
-                name = nameNode.property.name;
-            }
-            // Recursively build inner content if needed
-            const inner = buildContent(child);
-            out += `<element:${name}>${inner}</element:${name}>`;
-        }
-    }
-    return out;
-}
-/**
- * Convert full AST path to a relative scope path
- */
-function getRelativeScopePath(fullPath) {
-    // Extract the meaningful part of the path after "program.body"
-    const parts = fullPath.split(".");
-    const bodyIndex = parts.findIndex((part) => part === "body");
-    if (bodyIndex !== -1 && parts[bodyIndex - 1] === "program") {
-        // Take everything after "program.body"
-        const relativeParts = parts.slice(bodyIndex + 1);
-        return relativeParts.join("/").replace(/\[(\d+)\]/g, "$1");
-    }
-    // Fallback: use the full path but clean it up
-    return fullPath.replace(/\[(\d+)\]/g, "$1").replace(/\./g, "/");
-}
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { SourceStore } from "../storage/SourceStore";
+import { buildContent, getRelativeScopePath } from "./utils";
 export class Parser {
     constructor(options = {}) {
         this.options = options;
@@ -56,7 +14,48 @@ export class Parser {
         this.lockPath = path.resolve(process.cwd(), outputDir, ".lock");
         this.sourceStore = new SourceStore(outputDir);
     }
-    async parseProject() {
+    findFilesSync(dir, extensions, ignorePatterns) {
+        const files = [];
+        const isIgnored = (filePath) => {
+            return ignorePatterns.some((pattern) => {
+                // Convert glob pattern to regex-like matching
+                const regexPattern = pattern
+                    .replace(/\*\*/g, ".*")
+                    .replace(/\*/g, "[^/]*")
+                    .replace(/\//g, "\\/");
+                const regex = new RegExp(regexPattern);
+                return regex.test(filePath);
+            });
+        };
+        const walkDir = (currentDir) => {
+            try {
+                const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+                for (const entry of entries) {
+                    const fullPath = path.join(currentDir, entry.name);
+                    const relativePath = path.relative(dir, fullPath);
+                    if (isIgnored(relativePath)) {
+                        continue;
+                    }
+                    if (entry.isDirectory()) {
+                        walkDir(fullPath);
+                    }
+                    else if (entry.isFile()) {
+                        const ext = path.extname(entry.name);
+                        if (extensions.includes(ext)) {
+                            files.push(fullPath);
+                        }
+                    }
+                }
+            }
+            catch (error) {
+                // Skip directories we can't read
+                console.warn(`[Parser] Cannot read directory: ${currentDir}`);
+            }
+        };
+        walkDir(dir);
+        return files;
+    }
+    parseProject() {
         // Ensure .intl directory exists
         const intlDir = path.dirname(this.sourceStore["path"]);
         fs.mkdirSync(intlDir, { recursive: true });
@@ -68,18 +67,12 @@ export class Parser {
         // Create lock file
         fs.writeFileSync(this.lockPath, "");
         try {
-            // Load previous sources
-            const previous = this.sourceStore.load();
             console.log("[Parser] Scanning project for translatable strings...");
             const ignore = ["**/.next/**", "**/dist/**"];
             if (!this.options.includeNodeModules) {
                 ignore.push("**/node_modules/**");
             }
-            const files = await fg("**/*.{tsx,jsx}", {
-                cwd: process.cwd(),
-                ignore,
-                absolute: true
-            });
+            const files = this.findFilesSync(process.cwd(), [".tsx", ".jsx"], ignore);
             console.log(`[Parser] Found ${files.length} files to scan.`);
             const scopeMap = {
                 version: 0.1,

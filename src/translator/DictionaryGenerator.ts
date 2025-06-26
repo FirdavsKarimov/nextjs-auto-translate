@@ -23,7 +23,7 @@ export interface Dictionary {
 
 // Fake translation service - returns original text as placeholder
 class MockTranslationService {
-  async translate(text: string, targetLocale: string): Promise<string> {
+  translate(text: string, targetLocale: string): string {
     // For now, just return the original text with a locale prefix
     // In a real implementation, this would call an actual translation API
     if (targetLocale === "en") {
@@ -38,7 +38,7 @@ export class DictionaryGenerator {
 
   constructor(private options: DictionaryGeneratorOptions) {}
 
-  async generateDictionary(sourceMap: ScopeMap): Promise<void> {
+  generateDictionary(sourceMap: ScopeMap): string {
     console.log(
       `[DictionaryGenerator] Generating dictionary for locales: ${this.options.targetLocales.join(
         ", "
@@ -63,7 +63,7 @@ export class DictionaryGenerator {
         // Generate translations for each target locale
         for (const locale of this.options.targetLocales) {
           try {
-            translations[locale] = await this.translationService.translate(
+            translations[locale] = this.translationService.translate(
               scopeData.content,
               locale
             );
@@ -85,10 +85,13 @@ export class DictionaryGenerator {
     }
 
     // Write dictionary files
-    await this.writeDictionaryFiles(dictionary);
+    const outputPath = this.writeDictionaryFiles(dictionary);
+    const dictionaryJsonPath = path.join(outputPath, "dictionary.json");
+
+    return dictionaryJsonPath;
   }
 
-  private async writeDictionaryFiles(dictionary: Dictionary): Promise<void> {
+  private writeDictionaryFiles(dictionary: Dictionary): string {
     const outputPath = path.resolve(process.cwd(), this.options.outputDir);
 
     // Ensure output directory exists
@@ -120,6 +123,8 @@ export class DictionaryGenerator {
     console.log(
       `[DictionaryGenerator] Dictionary files written to: ${outputPath}`
     );
+
+    return outputPath;
   }
 
   private generateDictionaryJsContent(dictionary: Dictionary): string {

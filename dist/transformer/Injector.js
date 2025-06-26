@@ -1,41 +1,38 @@
-import fs from "fs";
-import path from "path";
 import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import generate from "@babel/generator";
 import * as t from "@babel/types";
-// Injects {t("scope")} in place of JSXText
-export function injectT(scope) {
-    return t.jsxExpressionContainer(t.callExpression(t.identifier("t"), [t.stringLiteral(scope)]));
+const traverseFunction = typeof traverse === "function" ? traverse : traverse.default;
+const generateFunction = typeof generate === "function" ? generate : generate.default;
+// Injects <Translated tKey="scope" /> in place of JSXText
+export function injectTranslated(scope) {
+    return t.jsxElement(t.jsxOpeningElement(t.jsxIdentifier("Translated"), [t.jsxAttribute(t.jsxIdentifier("tKey"), t.stringLiteral(scope))], true // self-closing
+    ), null, [], true);
 }
-// Ensures import { t } from 'algebras-auto-intl/runtime' exists
-export function ensureImportT(ast) {
+// Ensures import Translated from 'algebras-auto-intl/runtime/client/components/Translated' exists
+export function ensureImportTranslated(ast) {
     let hasImport = false;
-    traverse(ast, {
+    traverseFunction(ast, {
         ImportDeclaration(path) {
-            if (path.node.source.value === "algebras-auto-intl/runtime" &&
-                path.node.specifiers.some((s) => t.isImportSpecifier(s) &&
-                    t.isIdentifier(s.imported) &&
-                    s.imported.name === "t")) {
+            if (path.node.source.value ===
+                "algebras-auto-intl/runtime/client/components/Translated" &&
+                path.node.specifiers.some((s) => t.isImportDefaultSpecifier(s) &&
+                    t.isIdentifier(s.local) &&
+                    s.local.name === "Translated")) {
                 hasImport = true;
                 path.stop();
             }
         }
     });
     if (!hasImport) {
-        const importDecl = t.importDeclaration([t.importSpecifier(t.identifier("t"), t.identifier("t"))], t.stringLiteral("algebras-auto-intl/runtime"));
+        const importDecl = t.importDeclaration([t.importDefaultSpecifier(t.identifier("Translated"))], t.stringLiteral("algebras-auto-intl/runtime/client/components/Translated"));
         ast.program.body.unshift(importDecl);
     }
 }
 // Transforms all .tsx/.jsx files in the project, injecting t() calls
-export async function transformProject(sourceMap) {
-    const files = Object.keys(sourceMap.files || {});
-    console.log("files", files);
+export function transformProject(code, options) {
+    const files = Object.keys(options.sourceMap.files || {});
     for (const filePath of files) {
-        const absPath = path.resolve(process.cwd(), filePath);
-        if (!fs.existsSync(absPath))
-            continue;
-        const code = fs.readFileSync(absPath, "utf-8");
         let ast;
         try {
             ast = parse(code, {
@@ -48,9 +45,8 @@ export async function transformProject(sourceMap) {
             continue;
         }
         let changed = false;
-        const fileScopes = sourceMap.files[filePath]?.scopes || {};
-        console.log("FILESCOPES", Object.keys(fileScopes)[0]);
-        traverse(ast, {
+        const fileScopes = options.sourceMap.files[filePath]?.scopes || {};
+        traverseFunction(ast, {
             JSXText(path) {
                 const text = path.node.value.trim();
                 if (!text)
@@ -64,23 +60,21 @@ export async function transformProject(sourceMap) {
                     .getPathLocation()
                     .replace(/\[(\d+)\]/g, "$1")
                     .replace(/\./g, "/");
-                console.log("FILEPATH", filePath);
-                console.log("SCOPEPATH", scopePath);
                 if (!fileScopes[scopePath])
                     return;
-                // Replace text with {t("scope")}
-                path.replaceWith(injectT(`${filePath}::${scopePath}`));
-                console.log("FILEPATH", filePath);
+                // Replace text with <Translated tKey="scope" />
+                path.replaceWith(injectTranslated(`${filePath}::${scopePath}`));
                 changed = true;
             }
         });
-        console.log("changed", changed);
-        if (changed) {
-            ensureImportT(ast);
-            const output = generate(ast, { retainLines: true });
-            console.log("output", output);
-            // fs.writeFileSync(absPath, output.code, "utf-8");
-            // console.log(`[Injector] Transformed ${filePath}`);
+        if (!changed) {
+            return code;
         }
+        ensureImportTranslated(ast);
+        const output = generateFunction(ast, {
+            retainLines: true,
+            retainFunctionParens: true
+        });
+        return output.code;
     }
 }

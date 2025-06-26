@@ -1,9 +1,10 @@
-import { Parser } from "./parser/Parser.js";
-import { DictionaryGenerator } from "./translator/DictionaryGenerator.js";
+// src/index.ts
 import fs from "fs";
 import path from "path";
-import { transformProject } from "./transformer/Injector.js";
+import { Parser } from "./parser/Parser.js";
+import { DictionaryGenerator } from "./translator/DictionaryGenerator.js";
 let hasScheduled = false;
+let cachedSourceMap = null;
 function isProcessAlive(pid) {
     try {
         process.kill(pid, 0);
@@ -14,67 +15,74 @@ function isProcessAlive(pid) {
     }
 }
 export default function myPlugin(options = {}) {
-    const { includeNodeModules = false, targetLocales = ["en", "es", "fr", "de"], outputDir = "./intl" } = options;
-    return function wrapNextConfig(nextConfig) {
-        const scheduledFlagPath = path.resolve(process.cwd(), outputDir, ".scheduled");
-        const parserLockPath = path.resolve(process.cwd(), outputDir, ".lock");
-        const timestamp = new Date().toISOString();
-        const pid = process.pid;
-        console.log(`🔍 [${timestamp}] Plugin called (PID: ${pid})`);
-        // Check if this process already scheduled
-        if (hasScheduled) {
-            console.log(`🟡 [${timestamp}] Parser already scheduled in this process (PID: ${pid})`);
-            return nextConfig;
+    const { includeNodeModules = false, targetLocales = ["en", "es", "fr", "de"], outputDir = "./src/intl" } = options;
+    const scheduledFlagPath = path.resolve(process.cwd(), outputDir, ".scheduled");
+    const parserLockPath = path.resolve(process.cwd(), outputDir, ".lock");
+    function prepareSourceMap() {
+        try {
+            const parser = new Parser({ includeNodeModules, outputDir });
+            const sourceMap = parser.parseProject();
+            cachedSourceMap = sourceMap;
+            const dictionaryGenerator = new DictionaryGenerator({
+                targetLocales,
+                outputDir
+            });
+            dictionaryGenerator.generateDictionary(sourceMap);
+            fs.writeFileSync(path.resolve(outputDir, "source.json"), JSON.stringify(sourceMap, null, 2), "utf-8");
         }
-        // Check if ANY process already scheduled parsing
+        catch (err) {
+            console.error("❌ Failed to parse/generate source map:", err);
+            cachedSourceMap = null;
+        }
+    }
+    function wrapWebpack(nextWebpack) {
+        prepareSourceMap();
+        return function webpack(config, options) {
+            config.module.rules.push({
+                test: /\.[jt]sx?$/,
+                exclude: /node_modules/,
+                use: [
+                    {
+                        loader: require.resolve("./webpack/auto-intl-loader"),
+                        options: {
+                            sourceMap: cachedSourceMap ?? {}
+                        }
+                    }
+                ]
+            });
+            if (typeof nextWebpack === "function") {
+                return nextWebpack(config, options);
+            }
+            return config;
+        };
+    }
+    return function wrapNextConfig(nextConfig) {
+        if (hasScheduled) {
+            return {
+                ...nextConfig,
+                webpack: wrapWebpack(nextConfig.webpack)
+            };
+        }
         if (fs.existsSync(scheduledFlagPath)) {
             const flagPid = parseInt(fs.readFileSync(scheduledFlagPath, "utf-8"));
             if (isProcessAlive(flagPid)) {
-                console.log(`🟡 [${timestamp}] Parser already scheduled by alive process ${flagPid} (PID: ${pid})`);
-                return nextConfig;
+                return {
+                    ...nextConfig,
+                    webpack: wrapWebpack(nextConfig.webpack)
+                };
             }
             else {
-                console.log(`💀 [${timestamp}] Scheduled flag from dead process ${flagPid}, removing (PID: ${pid})`);
                 fs.unlinkSync(scheduledFlagPath);
             }
         }
-        console.log(`🟢 [${timestamp}] Scheduling parser (PID: ${pid})`);
         hasScheduled = true;
-        // Create scheduled flag immediately
         fs.mkdirSync(path.dirname(scheduledFlagPath), { recursive: true });
-        fs.writeFileSync(scheduledFlagPath, pid.toString());
-        // Clean up any stale parser lock file
-        if (fs.existsSync(parserLockPath)) {
-            console.log(`🧹 [${timestamp}] Removing stale parser lock file (PID: ${pid})`);
+        fs.writeFileSync(scheduledFlagPath, process.pid.toString());
+        if (fs.existsSync(parserLockPath))
             fs.unlinkSync(parserLockPath);
-        }
-        setImmediate(async () => {
-            const asyncTimestamp = new Date().toISOString();
-            console.log(`⚡ [${asyncTimestamp}] setImmediate callback started (PID: ${pid})`);
-            try {
-                const parser = new Parser({ includeNodeModules, outputDir });
-                const sourceMap = await parser.parseProject();
-                // Generate dictionary
-                const dictionaryGenerator = new DictionaryGenerator({
-                    targetLocales,
-                    outputDir
-                });
-                await dictionaryGenerator.generateDictionary(sourceMap);
-                console.log(`✅ [${asyncTimestamp}] Parser and dictionary generation completed (PID: ${pid})`);
-                // Step 2: Inject t() calls
-                setImmediate(() => {
-                    console.log("transforming project");
-                    transformProject(sourceMap).catch((err) => console.error("❌ Injector error:", err));
-                });
-            }
-            catch (err) {
-                console.error(`❌ [${asyncTimestamp}] Parser error (PID: ${pid}):`, err);
-            }
-            // Note: NOT removing scheduled flag here - let it persist for the build
-        });
-        // Return the original nextConfig without webpack modifications
-        return nextConfig;
+        return {
+            ...nextConfig,
+            webpack: wrapWebpack(nextConfig.webpack)
+        };
     };
 }
-// Export runtime utilities
-export * from "./runtime/index.js";
