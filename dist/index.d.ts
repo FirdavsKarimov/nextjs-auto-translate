@@ -1,4 +1,3 @@
-import type { NextConfig } from "next";
 import { LanguageCode } from "./data/languageMap.js";
 export { LanguageCode } from "./data/languageMap.js";
 export { default as AlgebrasIntlProvider } from "./runtime/server/Provider.js";
@@ -8,4 +7,6 @@ export interface PluginOptions {
     includeNodeModules?: boolean;
     outputDir?: string;
 }
-export default function myPlugin(options: PluginOptions): (nextConfig: NextConfig) => NextConfig;
+export default function myPlugin(options: PluginOptions): (nextConfig: Partial<Record<string, any>>) => {
+    webpack: import("next/dist/server/config-shared.js").NextJsWebpackConfig | null | undefined;
+};

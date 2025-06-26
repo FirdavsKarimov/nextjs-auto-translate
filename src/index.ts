@@ -97,7 +97,7 @@ export default function myPlugin(options: PluginOptions) {
     };
   }
 
-  return function wrapNextConfig(nextConfig: NextConfig): NextConfig {
+  return function wrapNextConfig(nextConfig: Partial<Record<string, any>>) {
     if (hasScheduled) {
       return {
         ...nextConfig,

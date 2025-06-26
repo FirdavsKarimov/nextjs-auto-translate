@@ -18,17 +18,20 @@
   "author": "moxx",
   "license": "ISC",
   "description": "automized i18n tool for Next.js projects",
+  
+  "peerDependencies": {
+    "next": "^13.0.0 || ^14.0.0 || ^15.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "webpack": "^5.0.0"
+  },
+
   "dependencies": {
     "@babel/generator": "^7.27.5",
     "@babel/parser": "^7.27.5",
     "@babel/traverse": "^7.27.4",
-    "deasync": "^0.1.30",
-    "fast-glob": "^3.3.3",
-    "loader-utils": "^3.3.1",
-    "next": "^15.3.4",
-    "react": "^19.1.0",
-    "webpack": "^5.99.9"
+    "loader-utils": "^3.3.1"
   },
+
   "devDependencies": {
     "@babel/cli": "^7.27.2",
     "@babel/core": "^7.27.4",
