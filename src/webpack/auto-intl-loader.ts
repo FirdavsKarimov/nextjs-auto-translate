@@ -13,7 +13,6 @@ export default function loader(
 ) {
   const options = this.getOptions();
   const callback = this.async();
-
   try {
     const result = transformProject(source, {
       sourceMap: options.sourceMap,

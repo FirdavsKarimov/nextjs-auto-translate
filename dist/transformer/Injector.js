@@ -1,7 +1,8 @@
+import generate from "@babel/generator";
 import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
-import generate from "@babel/generator";
 import * as t from "@babel/types";
+import path from "path";
 const traverseFunction = typeof traverse === "function" ? traverse : traverse.default;
 const generateFunction = typeof generate === "function" ? generate : generate.default;
 // Injects <Translated tKey="scope" /> in place of JSXText
@@ -29,52 +30,55 @@ export function ensureImportTranslated(ast) {
         ast.program.body.unshift(importDecl);
     }
 }
-// Transforms all .tsx/.jsx files in the project, injecting t() calls
+// Transforms the specified file, injecting t() calls
 export function transformProject(code, options) {
-    const files = Object.keys(options.sourceMap.files || {});
-    for (const filePath of files) {
-        let ast;
-        try {
-            ast = parse(code, {
-                sourceType: "module",
-                plugins: ["jsx", "typescript"]
-            });
-        }
-        catch (e) {
-            console.warn(`[Injector] Failed to parse ${filePath}:`, e);
-            continue;
-        }
-        let changed = false;
-        const fileScopes = options.sourceMap.files[filePath]?.scopes || {};
-        traverseFunction(ast, {
-            JSXText(path) {
-                const text = path.node.value.trim();
-                if (!text)
-                    return;
-                // Find the closest JSXElement ancestor
-                const jsxElement = path.findParent((p) => p.isJSXElement());
-                if (!jsxElement)
-                    return;
-                // Find the scope for this element
-                const scopePath = jsxElement
-                    .getPathLocation()
-                    .replace(/\[(\d+)\]/g, "$1")
-                    .replace(/\./g, "/");
-                if (!fileScopes[scopePath])
-                    return;
-                // Replace text with <Translated tKey="scope" />
-                path.replaceWith(injectTranslated(`${filePath}::${scopePath}`));
-                changed = true;
-            }
-        });
-        if (!changed) {
-            return code;
-        }
-        ensureImportTranslated(ast);
-        const output = generateFunction(ast, {
-            retainLines: true,
-            retainFunctionParens: true
-        });
-        return output.code;
+    const { filePath } = options;
+    const relativePath = path.relative(process.cwd(), filePath);
+    // Only process if the file exists in sourceMap
+    if (!options.sourceMap.files || !options.sourceMap.files[relativePath]) {
+        return code;
     }
+    let ast;
+    try {
+        ast = parse(code, {
+            sourceType: "module",
+            plugins: ["jsx", "typescript"]
+        });
+    }
+    catch (e) {
+        console.warn(`[Injector] Failed to parse ${relativePath}:`, e);
+        return code;
+    }
+    let changed = false;
+    const fileScopes = options.sourceMap.files[relativePath]?.scopes || {};
+    traverseFunction(ast, {
+        JSXText(path) {
+            const text = path.node.value.trim();
+            if (!text)
+                return;
+            // Find the closest JSXElement ancestor
+            const jsxElement = path.findParent((p) => p.isJSXElement());
+            if (!jsxElement)
+                return;
+            // Find the scope for this element
+            const scopePath = jsxElement
+                .getPathLocation()
+                .replace(/\[(\d+)\]/g, "$1")
+                .replace(/\./g, "/");
+            if (!fileScopes[scopePath])
+                return;
+            // Replace text with <Translated tKey="scope" />
+            path.replaceWith(injectTranslated(`${relativePath}::${scopePath}`));
+            changed = true;
+        }
+    });
+    if (!changed) {
+        return code;
+    }
+    ensureImportTranslated(ast);
+    const output = generateFunction(ast, {
+        retainLines: true,
+        retainFunctionParens: true
+    });
+    return output.code;
 }
