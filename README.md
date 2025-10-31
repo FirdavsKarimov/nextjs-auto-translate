@@ -19,6 +19,31 @@ An automated internationalization (i18n) tool for React and Next.js applications
 npm install algebras-auto-intl
 ```
 
+## Next.js Compatibility
+
+- Supported Next.js versions: 14, 15, 16
+- This library integrates via a webpack loader for source injection and a runtime provider for rendering.
+
+### Using with Next.js 15/16 (Turbopack)
+
+Turbopack does not run webpack loaders. To ensure JSX text is replaced by injected `Translated` components during build, run your project with webpack.
+
+Recommended options:
+
+- For development:
+  - Run with an environment flag to disable Turbopack.
+  - Example (package.json scripts):
+    ```bash
+    NEXT_DISABLE_TURBOPACK=1 next dev
+    ```
+- For production builds:
+  - Ensure builds use webpack so the loader runs:
+    ```bash
+    NEXT_DISABLE_TURBOPACK=1 next build
+    ```
+
+Note: Dictionary generation runs regardless of bundler, but source injection (replacing plain JSX text with `Translated`) requires webpack at the moment.
+
 ## Quick Start
 
 ### With Next.js
