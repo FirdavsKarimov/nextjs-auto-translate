@@ -381,3 +381,20 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Testing
+
+This project includes a unit test suite using Vitest (jsdom) and Testing Library.
+
+- How to run tests:
+  - `npm run test` (one-off)
+  - `npm run test:watch` (watch mode)
+
+- Coverage: basic V8 coverage reporters are enabled (text, lcov).
+
+- Implemented test suites (51 tests total, all passing):
+  - `tests/transformer.injector.test.ts` — 21 tests: Transformer stability and parsing behavior; ensures no code changes when file not in scope map and safe handling on parse errors; validates processing of valid TSX without throwing.
+  - `tests/translator.generator.test.ts` — 10 tests: Dictionary generation, presence of default and target locales, and mock translation prefixing for non-EN locales.
+  - `tests/runtime.translated.test.tsx` — 10 tests: Client provider and `Translated` component rendering for multiple locales.
+  - `tests/server.dictionary.test.ts` — 5 tests: Server-side dictionary loading from `ALGEBRAS_INTL_OUTPUT_DIR`.
+  - `tests/loader.test.ts` — 5 tests: Webpack loader basic behavior and pass-through when no scopes exist.
