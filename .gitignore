@@ -5,3 +5,10 @@
 **/.env.development.local
 **/.env.test.local
 **/.env.production.local
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Build output
+dist/
