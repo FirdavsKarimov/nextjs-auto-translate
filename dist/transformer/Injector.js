@@ -30,6 +30,59 @@ export function ensureImportTranslated(ast) {
         ast.program.body.unshift(importDecl);
     }
 }
+// Ensures import LocalesSwitcher exists
+export function ensureImportLocalesSwitcher(ast) {
+    let hasImport = false;
+    traverseFunction(ast, {
+        ImportDeclaration(path) {
+            if (path.node.source.value ===
+                "algebras-auto-intl/runtime/client/components/LocaleSwitcher" &&
+                path.node.specifiers.some((s) => t.isImportDefaultSpecifier(s) &&
+                    t.isIdentifier(s.local) &&
+                    s.local.name === "LocalesSwitcher")) {
+                hasImport = true;
+                path.stop();
+            }
+        }
+    });
+    if (!hasImport) {
+        const importDecl = t.importDeclaration([t.importDefaultSpecifier(t.identifier("LocalesSwitcher"))], t.stringLiteral("algebras-auto-intl/runtime/client/components/LocaleSwitcher"));
+        ast.program.body.unshift(importDecl);
+    }
+}
+// Inject LocalesSwitcher into the first section/div in the page
+export function injectLocaleSwitcher(ast) {
+    let injected = false;
+    traverseFunction(ast, {
+        JSXElement(path) {
+            if (injected)
+                return;
+            const openingElement = path.node.openingElement;
+            const tagName = openingElement.name;
+            // Check if it's a section or div with className
+            if (t.isJSXIdentifier(tagName) &&
+                (tagName.name === "section" || tagName.name === "div")) {
+                const hasClassName = openingElement.attributes.some((attr) => t.isJSXAttribute(attr) &&
+                    t.isJSXIdentifier(attr.name) &&
+                    attr.name.name === "className");
+                if (hasClassName && path.node.children.length > 0) {
+                    // Create language switcher element
+                    const switcherElement = t.jsxElement(t.jsxOpeningElement(t.jsxIdentifier("div"), [
+                        t.jsxAttribute(t.jsxIdentifier("className"), t.stringLiteral("fixed top-4 right-4 z-[9999]")),
+                    ], false), t.jsxClosingElement(t.jsxIdentifier("div")), [
+                        t.jsxText("\n          "),
+                        t.jsxElement(t.jsxOpeningElement(t.jsxIdentifier("LocalesSwitcher"), [], true), null, [], true),
+                        t.jsxText("\n        ")
+                    ], false);
+                    // Add switcher as first child
+                    path.node.children.unshift(t.jsxText("\n        "), switcherElement);
+                    injected = true;
+                    path.stop();
+                }
+            }
+        }
+    });
+}
 // Transforms the specified file, injecting t() calls
 export function transformProject(code, options) {
     const { filePath } = options;
@@ -76,6 +129,11 @@ export function transformProject(code, options) {
         return code;
     }
     ensureImportTranslated(ast);
+    // Inject language switcher for page.tsx files
+    if (relativePath.includes("page.tsx") || relativePath.includes("page.jsx")) {
+        ensureImportLocalesSwitcher(ast);
+        injectLocaleSwitcher(ast);
+    }
     const output = generateFunction(ast, {
         retainLines: true,
         retainFunctionParens: true

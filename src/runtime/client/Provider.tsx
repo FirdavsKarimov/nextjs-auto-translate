@@ -5,54 +5,69 @@ import {
   ReactNode,
   useContext,
   useEffect,
-  useState
+  useState,
+  useCallback,
+  useMemo
 } from "react";
 import { DictStructure } from "../types";
 import { LanguageCode } from "../../data/languageMap";
 
 const context = createContext<{
   dictionary: DictStructure;
-  locale: LanguageCode;
-  setLocale: (locale: LanguageCode) => void;
-  getLocales: () => LanguageCode[];
+  locale: string;
+  setLocale: (locale: string) => void;
 }>({
   dictionary: {
     version: "",
     files: {}
   },
-  locale: LanguageCode.en,
-  setLocale: () => {},
-  getLocales: () => []
+  locale: "en",
+  setLocale: () => {}
 });
 
 export const useAlgebrasIntl = () => {
-  return useContext(context);
+  const ctx = useContext(context);
+  
+  const getLocales = () => {
+    const entries = Object.values(ctx.dictionary.files)[0]?.entries;
+    if (!entries) return [];
+    const content = Object.values(entries)[0]?.content;
+    if (!content) return [];
+    return Object.keys(content);
+  };
+  
+  return {
+    ...ctx,
+    getLocales
+  };
 };
 
 interface AlgebrasIntlProviderProps {
   children: ReactNode;
-  dictionary: DictStructure;
-  locale: LanguageCode;
+  dictJson: string;
+  initialLocale: string;
 }
 
 const AlgebrasIntlClientProvider = (props: AlgebrasIntlProviderProps) => {
-  const [locale, setLocale] = useState<LanguageCode>(props.locale);
+  const [dictionary] = useState<DictStructure>(() => JSON.parse(props.dictJson));
+  const [locale, setLocaleState] = useState<string>(props.initialLocale);
 
   useEffect(() => {
     document.cookie = `locale=${locale}; path=/;`;
   }, [locale]);
 
-  const getLocales = () => {
-    const entries = Object.values(props.dictionary.files)[0].entries;
-    const content = Object.values(entries)[0].content;
-    const locales = Object.keys(content) as LanguageCode[];
-    return locales;
-  };
+  const setLocale = useCallback((newLocale: string) => {
+    setLocaleState(newLocale);
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    dictionary,
+    locale,
+    setLocale
+  }), [dictionary, locale, setLocale]);
 
   return (
-    <context.Provider
-      value={{ dictionary: props.dictionary, locale, setLocale, getLocales }}
-    >
+    <context.Provider value={contextValue}>
       {props.children}
     </context.Provider>
   );

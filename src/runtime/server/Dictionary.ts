@@ -13,7 +13,7 @@ class Dictionary {
     this.locale = locale;
   }
 
-  load = async () => {
+  load = async (): Promise<DictStructure> => {
     const outputDir = process.env.ALGEBRAS_INTL_OUTPUT_DIR;
     if (!outputDir) {
       throw new Error("ALGEBRAS_INTL_OUTPUT_DIR is not set");
@@ -24,10 +24,31 @@ class Dictionary {
       outputDir,
       "dictionary.json"
     );
+    console.log("[Dictionary] Loading from:", dictionaryJsonPath);
     const dictionaryJson = await fs.readFile(dictionaryJsonPath, "utf8");
-    this.dictionary = JSON.parse(dictionaryJson) as DictStructure;
+    const parsed = JSON.parse(dictionaryJson) as DictStructure;
+    console.log("[Dictionary] Loaded files:", Object.keys(parsed.files));
 
-    return this.dictionary;
+    // Return a completely new plain object without any class instance references
+    return {
+      version: parsed.version,
+      files: Object.fromEntries(
+        Object.entries(parsed.files).map(([filePath, fileData]) => [
+          filePath,
+          {
+            entries: Object.fromEntries(
+              Object.entries(fileData.entries).map(([entryKey, entryData]) => [
+                entryKey,
+                {
+                  content: { ...entryData.content },
+                  hash: entryData.hash
+                }
+              ])
+            )
+          }
+        ])
+      )
+    };
   };
 
   setLocale = (locale: string) => {

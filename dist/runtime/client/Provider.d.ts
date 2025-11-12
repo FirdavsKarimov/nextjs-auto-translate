@@ -1,16 +1,15 @@
 import { ReactNode } from "react";
 import { DictStructure } from "../types";
-import { LanguageCode } from "../../data/languageMap";
 export declare const useAlgebrasIntl: () => {
+    getLocales: () => string[];
     dictionary: DictStructure;
-    locale: LanguageCode;
-    setLocale: (locale: LanguageCode) => void;
-    getLocales: () => LanguageCode[];
+    locale: string;
+    setLocale: (locale: string) => void;
 };
 interface AlgebrasIntlProviderProps {
     children: ReactNode;
-    dictionary: DictStructure;
-    locale: LanguageCode;
+    dictJson: string;
+    initialLocale: string;
 }
 declare const AlgebrasIntlClientProvider: (props: AlgebrasIntlProviderProps) => import("react/jsx-runtime").JSX.Element;
 export default AlgebrasIntlClientProvider;

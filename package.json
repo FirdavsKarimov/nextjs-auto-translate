@@ -6,7 +6,9 @@
     ".": "./dist/index.js",
     "./runtime": "./dist/runtime/index.js",
     "./runtime/server": "./dist/runtime/server/Provider.js",
+    "./runtime/client": "./dist/runtime/client/Provider.js",
     "./runtime/client/components/Translated": "./dist/runtime/client/components/Translated.js",
+    "./runtime/client/components/LocaleSwitcher": "./dist/runtime/client/components/LocaleSwitcher.js",
     "./webpack/auto-intl-loader": "./dist/webpack/auto-intl-loader.js"
   },
   "scripts": {

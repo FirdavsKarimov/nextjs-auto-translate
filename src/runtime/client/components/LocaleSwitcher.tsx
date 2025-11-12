@@ -5,7 +5,7 @@ import { languageMap, LanguageCode } from "../../../data/languageMap";
 import { useAlgebrasIntl } from "../Provider";
 
 interface DropdownTriggerProps {
-  currentLocale: LanguageCode;
+  currentLocale: string;
   isOpen: boolean;
   onClick: () => void;
 }
@@ -45,7 +45,7 @@ const DropdownTrigger = ({
   >
     <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
       🌐
-      {languageMap[currentLocale]}
+      {languageMap[currentLocale as LanguageCode]}
     </span>
     <span
       style={{
@@ -60,9 +60,9 @@ const DropdownTrigger = ({
 );
 
 interface DropdownOptionProps {
-  locale: LanguageCode;
+  locale: string;
   isSelected: boolean;
-  onClick: (locale: LanguageCode) => void;
+  onClick: (locale: string) => void;
 }
 
 const DropdownOption = ({
@@ -105,7 +105,7 @@ const DropdownOption = ({
     {isSelected && (
       <span style={{ color: "#10b981", fontSize: "12px" }}>✓</span>
     )}
-    {languageMap[locale]}
+      {languageMap[locale as LanguageCode]}
   </button>
 );
 
@@ -117,7 +117,7 @@ const LocaleSwitcher = () => {
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
-  const handleLocaleChange = (locale: LanguageCode) => {
+  const handleLocaleChange = (locale: string) => {
     setLocale(locale);
     setIsOpen(false);
   };

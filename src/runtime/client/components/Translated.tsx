@@ -1,5 +1,6 @@
 "use client";
 
+import { createElement, ReactNode } from "react";
 import { useAlgebrasIntl } from "../Provider";
 
 interface TranslatedProps {
@@ -15,6 +16,8 @@ const Translated = (props: TranslatedProps) => {
   // Check if the file exists in dictionary
   if (!dictionary.files[fileKey]) {
     console.error(`File "${fileKey}" not found in dictionary`);
+    console.error(`Available files:`, Object.keys(dictionary.files));
+    console.error(`tKey was:`, tKey);
     return <>🚫 File not found: {fileKey}</>;
   }
 
@@ -33,7 +36,36 @@ const Translated = (props: TranslatedProps) => {
     return <>🚫 Content not found for locale: {locale}</>;
   }
 
-  return <>{content}</>;
+  // Parse content with <element:tag> syntax back into React elements
+  const parseContent = (text: string): React.ReactNode => {
+    const elementRegex = /<element:(\w+)>(.*?)<\/element:\1>/gs;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = elementRegex.exec(text)) !== null) {
+      // Add text before the element
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      // Add the element
+      const tagName = match[1];
+      const innerContent = match[2];
+      parts.push(createElement(tagName, { key: match.index }, parseContent(innerContent)));
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
+  return <>{parseContent(content)}</>;
 };
 
 export default Translated;
