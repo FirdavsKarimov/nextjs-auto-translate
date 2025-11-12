@@ -1,4 +1,4 @@
-import { DictStructure } from "../types";
+import { DictStructure } from "../types.js";
 declare class Dictionary {
     private locale;
     private dictionary;

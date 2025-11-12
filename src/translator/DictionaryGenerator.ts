@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { ScopeMap } from "../types";
+import { ScopeMap } from "../types.js";
 
 export interface DictionaryGeneratorOptions {
   defaultLocale: string;

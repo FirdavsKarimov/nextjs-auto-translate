@@ -19,7 +19,7 @@ const IntlWrapper = async ({ children }: IntlWrapperProps) => {
   }
 
   // Load dictionary directly as JSON
-  const outputDir = process.env.ALGEBRAS_INTL_OUTPUT_DIR || "src/intl";
+  const outputDir = process.env.ALGEBRAS_INTL_OUTPUT_DIR || ".intl";
   const dictionaryPath = path.join(process.cwd(), outputDir, "dictionary.json");
   
   const dictionaryJson = await fs.readFile(dictionaryPath, "utf8");

@@ -1,8 +1,8 @@
 "use client";
 import { jsxs as _jsxs, jsx as _jsx } from "react/jsx-runtime";
 import { useState } from "react";
-import { languageMap } from "../../../data/languageMap";
-import { useAlgebrasIntl } from "../Provider";
+import { languageMap } from "../../../data/languageMap.js";
+import { useAlgebrasIntl } from "../Provider.js";
 const DropdownTrigger = ({ currentLocale, isOpen, onClick }) => (_jsxs("button", { onClick: onClick, style: {
         display: "flex",
         alignItems: "center",

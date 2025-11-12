@@ -6,6 +6,7 @@
     ".": "./dist/index.js",
     "./runtime": "./dist/runtime/index.js",
     "./runtime/server": "./dist/runtime/server/Provider.js",
+    "./runtime/server/IntlWrapper": "./dist/runtime/server/IntlWrapper.js",
     "./runtime/client": "./dist/runtime/client/Provider.js",
     "./runtime/client/components/Translated": "./dist/runtime/client/components/Translated.js",
     "./runtime/client/components/LocaleSwitcher": "./dist/runtime/client/components/LocaleSwitcher.js",
@@ -21,39 +22,38 @@
   "author": "moxx",
   "license": "ISC",
   "description": "automized i18n tool for Next.js projects",
-  
   "peerDependencies": {
     "next": "^14.0.0 || ^15.0.0 || ^16.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "webpack": "^5.0.0"
   },
-
   "dependencies": {
     "@babel/generator": "^7.27.5",
     "@babel/parser": "^7.27.5",
     "@babel/traverse": "^7.27.4",
     "loader-utils": "^3.3.1"
   },
-
   "devDependencies": {
     "@babel/cli": "^7.27.2",
     "@babel/core": "^7.27.4",
     "@babel/preset-env": "^7.27.2",
     "@babel/preset-typescript": "^7.27.1",
     "@babel/types": "^7.27.6",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
     "@types/babel__generator": "^7.27.0",
     "@types/babel__traverse": "^7.20.7",
     "@types/loader-utils": "^2.0.6",
     "@types/node": "^24.0.3",
     "@types/react": "^19.1.8",
+    "@vitest/coverage-v8": "^2.1.4",
+    "jsdom": "^25.0.1",
+    "next": "^14.2.33",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
-    "vitest": "^2.1.4",
-    "@vitest/coverage-v8": "^2.1.4",
-    "@testing-library/react": "^16.0.1",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "jsdom": "^25.0.1",
-    "react-dom": "^19.0.0"
+    "vitest": "^2.1.4"
   }
 }

@@ -12,9 +12,10 @@ class MockTranslationService {
     }
 }
 export class DictionaryGenerator {
+    options;
+    translationService = new MockTranslationService();
     constructor(options) {
         this.options = options;
-        this.translationService = new MockTranslationService();
     }
     generateDictionary(sourceMap) {
         const allLocales = [

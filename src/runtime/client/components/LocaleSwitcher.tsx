@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { languageMap, LanguageCode } from "../../../data/languageMap";
-import { useAlgebrasIntl } from "../Provider";
+import { languageMap, LanguageCode } from "../../../data/languageMap.js";
+import { useAlgebrasIntl } from "../Provider.js";
 
 interface DropdownTriggerProps {
   currentLocale: string;

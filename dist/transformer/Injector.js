@@ -1,10 +1,11 @@
-import generate from "@babel/generator";
+import generateDefault from "@babel/generator";
 import { parse } from "@babel/parser";
-import traverse from "@babel/traverse";
+import traverseDefault from "@babel/traverse";
 import * as t from "@babel/types";
 import path from "path";
-const traverseFunction = typeof traverse === "function" ? traverse : traverse.default;
-const generateFunction = typeof generate === "function" ? generate : generate.default;
+// @babel/traverse and @babel/generator have different exports for ESM vs CommonJS
+const traverse = traverseDefault.default || traverseDefault;
+const generate = generateDefault.default || generateDefault;
 // Injects <Translated tKey="scope" /> in place of JSXText
 export function injectTranslated(scope) {
     return t.jsxElement(t.jsxOpeningElement(t.jsxIdentifier("Translated"), [t.jsxAttribute(t.jsxIdentifier("tKey"), t.stringLiteral(scope))], true // self-closing
@@ -13,7 +14,7 @@ export function injectTranslated(scope) {
 // Ensures import Translated from 'algebras-auto-intl/runtime/client/components/Translated' exists
 export function ensureImportTranslated(ast) {
     let hasImport = false;
-    traverseFunction(ast, {
+    traverse(ast, {
         ImportDeclaration(path) {
             if (path.node.source.value ===
                 "algebras-auto-intl/runtime/client/components/Translated" &&
@@ -33,7 +34,7 @@ export function ensureImportTranslated(ast) {
 // Ensures import LocalesSwitcher exists
 export function ensureImportLocalesSwitcher(ast) {
     let hasImport = false;
-    traverseFunction(ast, {
+    traverse(ast, {
         ImportDeclaration(path) {
             if (path.node.source.value ===
                 "algebras-auto-intl/runtime/client/components/LocaleSwitcher" &&
@@ -53,7 +54,7 @@ export function ensureImportLocalesSwitcher(ast) {
 // Inject LocalesSwitcher into the first section/div in the page
 export function injectLocaleSwitcher(ast) {
     let injected = false;
-    traverseFunction(ast, {
+    traverse(ast, {
         JSXElement(path) {
             if (injected)
                 return;
@@ -104,7 +105,7 @@ export function transformProject(code, options) {
     }
     let changed = false;
     const fileScopes = options.sourceMap.files[relativePath]?.scopes || {};
-    traverseFunction(ast, {
+    traverse(ast, {
         JSXText(path) {
             const text = path.node.value.trim();
             if (!text)
@@ -134,7 +135,7 @@ export function transformProject(code, options) {
         ensureImportLocalesSwitcher(ast);
         injectLocaleSwitcher(ast);
     }
-    const output = generateFunction(ast, {
+    const output = generate(ast, {
         retainLines: true,
         retainFunctionParens: true
     });

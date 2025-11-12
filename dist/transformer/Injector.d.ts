@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { ScopeMap } from "../types";
+import { ScopeMap } from "../types.js";
 export declare function injectTranslated(scope: string): t.JSXElement;
 export declare function ensureImportTranslated(ast: t.File): void;
 export declare function ensureImportLocalesSwitcher(ast: t.File): void;

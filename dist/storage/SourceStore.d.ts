@@ -1,4 +1,4 @@
-import { ScopeMap } from "../types";
+import { ScopeMap } from "../types.js";
 export declare class SourceStore {
     path: string;
     constructor(outputDir?: string);

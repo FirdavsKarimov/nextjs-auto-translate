@@ -1,15 +1,13 @@
-import generate from "@babel/generator";
+import generateDefault from "@babel/generator";
 import { parse } from "@babel/parser";
-import traverse, { NodePath } from "@babel/traverse";
+import traverseDefault, { NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 import path from "path";
-import { ScopeMap } from "../types";
+import { ScopeMap } from "../types.js";
 
-const traverseFunction =
-  typeof traverse === "function" ? traverse : (traverse as any).default;
-
-const generateFunction =
-  typeof generate === "function" ? generate : (generate as any).default;
+// @babel/traverse and @babel/generator have different exports for ESM vs CommonJS
+const traverse = (traverseDefault as any).default || traverseDefault;
+const generate = (generateDefault as any).default || generateDefault;
 
 // Injects <Translated tKey="scope" /> in place of JSXText
 export function injectTranslated(scope: string): t.JSXElement {
@@ -28,7 +26,7 @@ export function injectTranslated(scope: string): t.JSXElement {
 // Ensures import Translated from 'algebras-auto-intl/runtime/client/components/Translated' exists
 export function ensureImportTranslated(ast: t.File) {
   let hasImport = false;
-  traverseFunction(ast, {
+  traverse(ast, {
     ImportDeclaration(path: any) {
       if (
         path.node.source.value ===
@@ -57,7 +55,7 @@ export function ensureImportTranslated(ast: t.File) {
 // Ensures import LocalesSwitcher exists
 export function ensureImportLocalesSwitcher(ast: t.File) {
   let hasImport = false;
-  traverseFunction(ast, {
+  traverse(ast, {
     ImportDeclaration(path: any) {
       if (
         path.node.source.value ===
@@ -87,7 +85,7 @@ export function ensureImportLocalesSwitcher(ast: t.File) {
 export function injectLocaleSwitcher(ast: t.File) {
   let injected = false;
   
-  traverseFunction(ast, {
+  traverse(ast, {
     JSXElement(path: any) {
       if (injected) return;
       
@@ -179,7 +177,7 @@ export function transformProject(
   let changed = false;
   const fileScopes = options.sourceMap.files[relativePath]?.scopes || {};
 
-  traverseFunction(ast, {
+  traverse(ast, {
     JSXText(path: NodePath<t.JSXText>) {
       const text = path.node.value.trim();
 
@@ -215,7 +213,7 @@ export function transformProject(
     injectLocaleSwitcher(ast);
   }
   
-  const output = generateFunction(ast, {
+  const output = generate(ast, {
     retainLines: true,
     retainFunctionParens: true
   });

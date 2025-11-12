@@ -1,13 +1,18 @@
 // src/parser/Parser.ts
 import { parse } from "@babel/parser";
-import traverse from "@babel/traverse";
+import traverseDefault from "@babel/traverse";
 import * as t from "@babel/types";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
-import { SourceStore } from "../storage/SourceStore";
-import { buildContent, getRelativeScopePath } from "./utils";
+import { SourceStore } from "../storage/SourceStore.js";
+import { buildContent, getRelativeScopePath } from "./utils.js";
+// @babel/traverse has different exports for ESM vs CommonJS
+const traverse = traverseDefault.default || traverseDefault;
 export class Parser {
+    options;
+    lockPath;
+    sourceStore;
     constructor(options = {}) {
         this.options = options;
         const outputDir = options.outputDir || ".intl";

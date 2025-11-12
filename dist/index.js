@@ -1,11 +1,15 @@
 // src/index.ts
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { Parser } from "./parser/Parser.js";
 import { DictionaryGenerator } from "./translator/DictionaryGenerator.js";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Re-export commonly used types and components
 export { LanguageCode } from "./data/languageMap.js";
-export { default as AlgebrasIntlProvider } from "./runtime/server/Provider.js";
+// Note: AlgebrasIntlProvider should be imported directly from the runtime path
+// export { default as AlgebrasIntlProvider } from "./runtime/server/Provider.js";
 let hasScheduled = false;
 let cachedSourceMap = null;
 function isProcessAlive(pid) {
@@ -48,7 +52,7 @@ export default function myPlugin(options) {
                 exclude: /node_modules/,
                 use: [
                     {
-                        loader: require.resolve("./webpack/auto-intl-loader"),
+                        loader: path.resolve(__dirname, "./webpack/auto-intl-loader.js"),
                         options: {
                             sourceMap: cachedSourceMap ?? {}
                         }

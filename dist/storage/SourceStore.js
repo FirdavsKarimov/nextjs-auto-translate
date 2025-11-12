@@ -2,6 +2,7 @@
 import fs from "fs";
 import path from "path";
 export class SourceStore {
+    path;
     constructor(outputDir = ".intl") {
         this.path = path.resolve(process.cwd(), outputDir, "source.json");
     }

@@ -1,4 +1,5 @@
 export class Translator {
+    provider;
     constructor(provider) {
         this.provider = provider;
     }

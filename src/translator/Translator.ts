@@ -1,5 +1,5 @@
 // src/translator/Translator.ts
-import { ScopeMap, Dictionary } from "../types";
+import { ScopeMap, Dictionary } from "../types.js";
 
 export interface ITranslateProvider {
   translateText(text: string, targetLang: string): Promise<string>;

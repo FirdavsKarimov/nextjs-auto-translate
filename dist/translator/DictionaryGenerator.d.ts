@@ -1,4 +1,4 @@
-import { ScopeMap } from "../types";
+import { ScopeMap } from "../types.js";
 export interface DictionaryGeneratorOptions {
     defaultLocale: string;
     targetLocales: string[];

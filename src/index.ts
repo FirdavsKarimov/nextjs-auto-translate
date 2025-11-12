@@ -2,14 +2,19 @@
 import fs from "fs";
 import type { NextConfig } from "next";
 import path from "path";
+import { fileURLToPath } from "url";
 import { Parser } from "./parser/Parser.js";
 import { DictionaryGenerator } from "./translator/DictionaryGenerator.js";
 import { ScopeMap } from "./types.js";
 import { LanguageCode } from "./data/languageMap.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Re-export commonly used types and components
 export { LanguageCode } from "./data/languageMap.js";
-export { default as AlgebrasIntlProvider } from "./runtime/server/Provider.js";
+// Note: AlgebrasIntlProvider should be imported directly from the runtime path
+// export { default as AlgebrasIntlProvider } from "./runtime/server/Provider.js";
 
 let hasScheduled = false;
 let cachedSourceMap: ScopeMap | null = null;
@@ -81,7 +86,7 @@ export default function myPlugin(options: PluginOptions) {
         exclude: /node_modules/,
         use: [
           {
-            loader: require.resolve("./webpack/auto-intl-loader"),
+            loader: path.resolve(__dirname, "./webpack/auto-intl-loader.js"),
             options: {
               sourceMap: cachedSourceMap ?? {}
             }

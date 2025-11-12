@@ -1,7 +1,7 @@
 // src/storage/DictionaryStore.ts
 import fs from "fs";
 import path from "path";
-import { Dictionary } from "../types";
+import { Dictionary } from "../types.js";
 
 export class DictionaryStore {
   private path = path.resolve(process.cwd(), ".intl/dictionary.json");

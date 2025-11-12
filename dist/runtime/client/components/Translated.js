@@ -1,7 +1,7 @@
 "use client";
 import { Fragment as _Fragment, jsxs as _jsxs, jsx as _jsx } from "react/jsx-runtime";
 import { createElement } from "react";
-import { useAlgebrasIntl } from "../Provider";
+import { useAlgebrasIntl } from "../Provider.js";
 const Translated = (props) => {
     const { tKey } = props;
     const [fileKey, entryKey] = tKey.split("::");

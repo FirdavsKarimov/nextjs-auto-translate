@@ -2,9 +2,7 @@
 import fs from "fs";
 import path from "path";
 export class DictionaryStore {
-    constructor() {
-        this.path = path.resolve(process.cwd(), ".intl/dictionary.json");
-    }
+    path = path.resolve(process.cwd(), ".intl/dictionary.json");
     save(data) {
         fs.mkdirSync(path.dirname(this.path), { recursive: true });
         fs.writeFileSync(this.path, JSON.stringify(data, null, 2));
