@@ -1,6 +1,6 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
 import Translated from "../src/runtime/client/components/Translated";
 import ClientProvider from "../src/runtime/client/Provider";
 import type { DictStructure } from "../src/runtime/types";
@@ -23,21 +23,34 @@ const makeDict = (): DictStructure => ({
 	}
 });
 
+// Test wrapper that converts dictionary object to the expected props
+const TestProvider = ({ dictionary, locale, children }: { dictionary: DictStructure; locale: string; children: React.ReactNode }) => {
+	return (
+		<ClientProvider dictJson={JSON.stringify(dictionary)} initialLocale={locale}>
+			{children}
+		</ClientProvider>
+	);
+};
+
 describe("Translated component", () => {
+	afterEach(() => {
+		cleanup();
+	});
+
 	it("renders content for locale en", () => {
 		render(
-			<ClientProvider dictionary={makeDict()} locale={LanguageCode.en}>
+			<TestProvider dictionary={makeDict()} locale={LanguageCode.en}>
 				<Translated tKey="src/F.tsx::x/y" />
-			</ClientProvider>
+			</TestProvider>
 		);
 		expect(screen.getByText("Hello")).toBeInTheDocument();
 	});
 
 	it("renders content for locale es", () => {
 		render(
-			<ClientProvider dictionary={makeDict()} locale={LanguageCode.es}>
+			<TestProvider dictionary={makeDict()} locale={LanguageCode.es}>
 				<Translated tKey="src/F.tsx::x/y" />
-			</ClientProvider>
+			</TestProvider>
 		);
 		expect(screen.getByText("[ES] Hello")).toBeInTheDocument();
 	});
@@ -45,9 +58,9 @@ describe("Translated component", () => {
 	for (let i = 0; i < 8; i++) {
 		it(`renders multiple times (${i+1})`, () => {
 			render(
-				<ClientProvider dictionary={makeDict()} locale={LanguageCode.en}>
+				<TestProvider dictionary={makeDict()} locale={LanguageCode.en}>
 					<Translated tKey="src/F.tsx::x/y" />
-				</ClientProvider>
+				</TestProvider>
 			);
 			expect(screen.getByText("Hello")).toBeInTheDocument();
 		});

@@ -42,8 +42,16 @@ const Translated = (props: TranslatedProps) => {
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
+    let iterationCount = 0;
+    const maxIterations = 100; // Prevent infinite loops
 
     while ((match = elementRegex.exec(text)) !== null) {
+      // Safety check to prevent infinite loops
+      if (++iterationCount > maxIterations) {
+        console.error('Maximum iterations exceeded in parseContent');
+        break;
+      }
+
       // Add text before the element
       if (match.index > lastIndex) {
         parts.push(text.substring(lastIndex, match.index));
@@ -54,7 +62,13 @@ const Translated = (props: TranslatedProps) => {
       const innerContent = match[2];
       parts.push(createElement(tagName, { key: match.index }, parseContent(innerContent)));
 
-      lastIndex = match.index + match[0].length;
+      lastIndex = elementRegex.lastIndex;
+      
+      // Safety check: if we're not advancing, break to prevent infinite loop
+      if (lastIndex <= match.index) {
+        console.error('Regex not advancing, breaking to prevent infinite loop');
+        break;
+      }
     }
 
     // Add remaining text

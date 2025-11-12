@@ -41,3 +41,4 @@ const IntlWrapper = async ({ children }: IntlWrapperProps) => {
 
 export default IntlWrapper;
 
+
