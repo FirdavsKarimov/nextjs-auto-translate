@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node-version }}, Next.js ${{ matrix.nextjs-version }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20, 22]
+        nextjs-version: [14, 15, 16]
+        include:
+          - nextjs-version: 14
+            react-version: 18
+          - nextjs-version: 15
+            react-version: 18
+          - nextjs-version: 16
+            react-version: 19
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies with React ${{ matrix.react-version }} and Next.js ${{ matrix.nextjs-version }}
+        run: |
+          npm install --legacy-peer-deps
+          npm install --save-dev --legacy-peer-deps react@${{ matrix.react-version }} react-dom@${{ matrix.react-version }} next@${{ matrix.nextjs-version }}
+      
+      - name: Run tests
+        run: npm test
+
